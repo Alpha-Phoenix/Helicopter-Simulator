@@ -10,7 +10,7 @@ LIBS += -lGL -lglfw -lX11 -lpthread -lXrandr -lXi -ldl
 SOURCES += main.cpp \
     src/glad.c \
     Mesh.cpp \
-    utils.cpp
+    Utils.cpp
 
 HEADERS += \
     learnopengl/camera.h \
@@ -18,9 +18,7 @@ HEADERS += \
     Mesh.hpp \
     Utils.hpp \
     include/glad/glad.h \
-    include/KHR/khrplatform.h \
-    learnopengl/mesh.h \
-    learnopengl/model.h
+    include/KHR/khrplatform.h
 
 DISTFILES += \
     shaders/default.frag \
@@ -35,4 +33,5 @@ DISTFILES += \
     models/helicopter/helice_sup.obj \
     models/helicopter/helice_back.obj \
     models/helicopter/cabine.obj \
-    models/helicopter/base.obj
+    models/helicopter/base.obj \
+    models/smooth_sphere.obj

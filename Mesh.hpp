@@ -27,11 +27,13 @@ public:
     std::vector<glm::vec3> vertices;
     std::vector<glm::vec3> normals;
     std::vector<glm::vec2> texcoords;
-    std::vector<GLuint> indices;
 public:
     Mesh(const char *modelPath);
     virtual ~Mesh();
     void draw(const Shader &shader);
+    void rotate(GLfloat radians, glm::vec3 axis);
+    void translate(glm::vec3 position);
+    void scale(GLfloat scaleFactor);
 };
 
 #endif // MESH_H

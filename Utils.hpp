@@ -10,6 +10,7 @@
 #include <iterator>
 
 #define RGBA_WHITE 1.0f, 1.0f, 1.0f, 1.0f
+#define RGBA_DARK_GREY 0.2f, 0.2f, 0.2f, 1.0f
 
 const glm::vec3 origin(0.0f, 0.0f, 0.0f);
 const glm::vec3 xaxis(1.0f, 0.0f, 0.0f);
