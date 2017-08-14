@@ -10,7 +10,10 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-Mesh::Mesh(const char *modelPath)
+#define STB_IMAGE_IMPLEMENTATION
+#include <learnopengl/stb_image.h>
+
+Mesh::Mesh(const char *modelPath, const char *texturePath)
 {
     std::ifstream modelFile(modelPath);
     std::string line, lineHeader;
@@ -104,6 +107,31 @@ Mesh::Mesh(const char *modelPath)
         glBufferData(GL_ARRAY_BUFFER, this->texcoords.size() * sizeof(glm::vec2), &this->texcoords[0], GL_DYNAMIC_DRAW);
         glVertexAttribPointer(TEXCOORD_BUFFER_INDEX, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (void*)(0));
         glEnableVertexAttribArray(TEXCOORD_BUFFER_INDEX);
+
+        // load and create a texture
+        // -------------------------
+        glGenTextures(1, &this->textureID);
+        glBindTexture(GL_TEXTURE_2D, this->textureID); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
+        // set the texture wrapping parameters
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        // set texture filtering parameters
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        // load image, create texture and generate mipmaps
+        int width, height, nrChannels;
+        // The FileSystem::getPath(...) is part of the GitHub repository so we can find files on any IDE/platform; replace it with your own image path.
+        unsigned char *data = stbi_load(texturePath, &width, &height, &nrChannels, 0);
+        if (data)
+        {
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+            glGenerateMipmap(GL_TEXTURE_2D);
+        }
+        else
+        {
+            std::cout << "Failed to load texture" << std::endl;
+        }
+        stbi_image_free(data);
     }
 
     if (this->modelFLag & NORMAL) {
@@ -112,6 +140,8 @@ Mesh::Mesh(const char *modelPath)
         glVertexAttribPointer(NORMAL_BUFFER_INDEX, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)(0));
         glEnableVertexAttribArray(NORMAL_BUFFER_INDEX);
     }
+
+
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
@@ -126,14 +156,20 @@ Mesh::~Mesh()
 void Mesh::draw(const Shader &shader)
 {
     glBindVertexArray(this->vao);
+    if(this->modelFLag & TEXCOORD) {
+        glBindTexture(GL_TEXTURE_2D, this->textureID);
+    }
     shader.use();
     glDrawArrays(GL_TRIANGLES, 0, this->vertices.size() * 3);
 }
 
-void Mesh::rotate(GLfloat radians, glm::vec3 axis)
+void Mesh::rotate(GLfloat radians, glm::vec3 axis, glm::vec3 pivot)
 {
     glm::mat4 rotationMatrix;
+    rotationMatrix = glm::translate(rotationMatrix, pivot);
     rotationMatrix = glm::rotate(rotationMatrix, radians, axis);
+    rotationMatrix = glm::translate(rotationMatrix, -pivot);
+
     for (size_t i = 0; i < this->vertices.size(); i++) {
         // Updating Vertices
         glm::vec3 vertex = this->vertices[i];
@@ -143,10 +179,12 @@ void Mesh::rotate(GLfloat radians, glm::vec3 axis)
 
         // Updating Normals
         glm::vec3 normal = this->normals[i];
-        glm::vec4 normal4(normal, 1.0f);
+        glm::vec4 normal4(normal, 0.0f);
         normal4 = rotationMatrix * normal4;
         this->normals[i] = glm::vec3(normal4);
     }
+
+    glBindVertexArray(this->vao);
 
     if (this->modelFLag & VERTEX) {
         glBindBuffer(GL_ARRAY_BUFFER, this->vbo[VERTEX_BUFFER_INDEX]);

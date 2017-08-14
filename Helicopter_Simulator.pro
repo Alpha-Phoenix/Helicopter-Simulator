@@ -18,7 +18,8 @@ HEADERS += \
     Mesh.hpp \
     Utils.hpp \
     include/glad/glad.h \
-    include/KHR/khrplatform.h
+    include/KHR/khrplatform.h \
+    learnopengl/stb_image.h
 
 DISTFILES += \
     shaders/default.frag \
@@ -34,4 +35,11 @@ DISTFILES += \
     models/helicopter/helice_back.obj \
     models/helicopter/cabine.obj \
     models/helicopter/base.obj \
-    models/smooth_sphere.obj
+    models/smooth_sphere.obj \
+    shaders/lighting.vert \
+    shaders/lighting.frag \
+    textures/container.jpg \
+    textures/cabine_texture.png \
+    textures/helice_tras_texture.jpg \
+    textures/helice_sup_texture.jpg \
+    textures/cabine_texture.jpg

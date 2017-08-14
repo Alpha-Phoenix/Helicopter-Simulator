@@ -24,14 +24,15 @@ public:
     GLuint vao;
     GLuint vbo[VBO_SIZE];
     GLuint modelFLag;
+    GLuint textureID;
     std::vector<glm::vec3> vertices;
     std::vector<glm::vec3> normals;
     std::vector<glm::vec2> texcoords;
 public:
-    Mesh(const char *modelPath);
+    Mesh(const char *modelPath, const char *texturePath = nullptr);
     virtual ~Mesh();
     void draw(const Shader &shader);
-    void rotate(GLfloat radians, glm::vec3 axis);
+    void rotate(GLfloat radians, glm::vec3 axis, glm::vec3 pivot = glm::vec3(0));
     void translate(glm::vec3 position);
     void scale(GLfloat scaleFactor);
 };
