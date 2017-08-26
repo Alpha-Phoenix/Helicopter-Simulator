@@ -13,7 +13,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <learnopengl/stb_image.h>
 
-Mesh::Mesh(const char *modelPath, const char *texturePath)
+Mesh::Mesh(const char *modelPath, const char *texturePath, glm::vec3 pivot)
 {
     std::ifstream modelFile(modelPath);
     std::string line, lineHeader;
@@ -87,7 +87,7 @@ Mesh::Mesh(const char *modelPath, const char *texturePath)
     }
 
     modelFile.close();
-
+    this->pivot = pivot;
     this->modelFLag = modelFlag;
 
     glGenVertexArrays(1, &this->vao);
@@ -165,7 +165,7 @@ void Mesh::draw(const Shader &shader)
 
 void Mesh::rotate(GLfloat radians, glm::vec3 axis, glm::vec3 pivot)
 {
-    glm::mat4 rotationMatrix;
+    glm::mat4 rotationMatrix, rotPivot;
     rotationMatrix = glm::translate(rotationMatrix, pivot);
     rotationMatrix = glm::rotate(rotationMatrix, radians, axis);
     rotationMatrix = glm::translate(rotationMatrix, -pivot);
@@ -184,6 +184,13 @@ void Mesh::rotate(GLfloat radians, glm::vec3 axis, glm::vec3 pivot)
         this->normals[i] = glm::vec3(normal4);
     }
 
+    if(pivot != this->pivot) {
+        rotPivot = glm::translate(rotPivot, pivot);
+        rotPivot = glm::rotate(rotPivot, radians, axis);
+        rotPivot = glm::translate(rotPivot, -pivot);
+        this->pivot = glm::vec3(rotPivot * glm::vec4(this->pivot, 1.0f));
+    }
+
     glBindVertexArray(this->vao);
 
     if (this->modelFLag & VERTEX) {
@@ -199,4 +206,37 @@ void Mesh::rotate(GLfloat radians, glm::vec3 axis, glm::vec3 pivot)
         glVertexAttribPointer(NORMAL_BUFFER_INDEX, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)(0));
         glEnableVertexAttribArray(NORMAL_BUFFER_INDEX);
     }
+}
+
+void Mesh::rotate(GLfloat radians, glm::vec3 axis)
+{
+    this->rotate(radians, axis, this->pivot);
+}
+
+void Mesh::translate(glm::vec3 position)
+{
+    glm::mat4 translationMatrix;
+    translationMatrix = glm::translate(translationMatrix, position);
+    for (size_t i = 0; i < this->vertices.size(); i++) {
+        // Updating Vertices
+        glm::vec3 vertex = this->vertices[i];
+        glm::vec4 vertex4(vertex, 1.0f);
+        vertex4 = translationMatrix * vertex4;
+        this->vertices[i] = glm::vec3(vertex4);
+    }
+    this->pivot += position;
+
+    glBindVertexArray(this->vao);
+
+    if (this->modelFLag & VERTEX) {
+        glBindBuffer(GL_ARRAY_BUFFER, this->vbo[VERTEX_BUFFER_INDEX]);
+        glBufferData(GL_ARRAY_BUFFER, this->vertices.size() * sizeof(glm::vec3), &this->vertices[0], GL_DYNAMIC_DRAW);
+        glVertexAttribPointer(VERTEX_BUFFER_INDEX, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)(0));
+        glEnableVertexAttribArray(VERTEX_BUFFER_INDEX);
+    }
+}
+
+void Mesh::setPivot(glm::vec3 pivot)
+{
+    this->pivot = pivot;
 }

@@ -28,13 +28,15 @@ public:
     std::vector<glm::vec3> vertices;
     std::vector<glm::vec3> normals;
     std::vector<glm::vec2> texcoords;
+    glm::vec3 pivot;
 public:
-    Mesh(const char *modelPath, const char *texturePath = nullptr);
+    Mesh(const char *modelPath, const char *texturePath = nullptr, glm::vec3 pivot = glm::vec3(0));
     virtual ~Mesh();
     void draw(const Shader &shader);
-    void rotate(GLfloat radians, glm::vec3 axis, glm::vec3 pivot = glm::vec3(0));
+    void rotate(GLfloat radians, glm::vec3 axis, glm::vec3 pivot);
+    void rotate(GLfloat radians, glm::vec3 axis);
     void translate(glm::vec3 position);
-    void scale(GLfloat scaleFactor);
+    void setPivot(glm::vec3 pivot = glm::vec3(0));
 };
 
 #endif // MESH_H

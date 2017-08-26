@@ -31,15 +31,23 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow *window);
 
 // Helicopter
+Mesh* helicopter[4];
+constexpr int CABINE = 0;
+constexpr int HELICE_TRAS = 1;
+constexpr int HELICE_SUP = 2;
+constexpr int BASE = 3;
 glm::vec3 helicopterForward = glm::vec3(-zaxis);
 glm::vec3 helicopterUp = glm::vec3(yaxis);
-glm::vec3 helice_tras_pivot(0.11770f, 2.15358, 4.82899);
+
+glm::vec3 helice_tras_pivot(0.11770f, 2.15358f, 4.82899f);
 glm::vec3 helice_sup_pivot(0.0f, 2.95383f, 0.00268f);
+glm::vec3 base_pivot(0.0f, 0.0f, -0.05162f);
+glm::vec3 cabine_pivot(0.0f, 1.30383f, 0.0f);
 
 float helicopterRotationForce = 0.0f;
 const float helicopterMaxRotationForce = 30.0f;
 
-void processPhysics(GLFWwindow *window);
+void processPhysics(GLFWwindow *window, float deltaTime);
 
 using namespace std;
 
@@ -52,11 +60,16 @@ int main()
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     Shader lightingShader("shaders/lighting.vert", "shaders/lighting.frag");
-    Mesh cabine("models/helicopter/cabine.obj", "textures/base_texture.jpg");
-    Mesh helice_tras("models/helicopter/helice_back.obj", "textures/base_texture.jpg");
-    Mesh helice_sup("models/helicopter/helice_sup.obj", "textures/base_texture.jpg");
-    Mesh base("models/helicopter/base.obj", "textures/base_texture.jpg");
+    Mesh cabine("models/helicopter/cabine.obj", "textures/base_texture.jpg", cabine_pivot);
+    Mesh helice_tras("models/helicopter/helice_back.obj", "textures/base_texture.jpg", helice_tras_pivot);
+    Mesh helice_sup("models/helicopter/helice_sup.obj", "textures/base_texture.jpg", helice_sup_pivot);
+    Mesh base("models/helicopter/base.obj", "textures/base_texture.jpg", base_pivot);
     Mesh floor("models/floor.obj", "textures/floor_texture.jpg");
+
+    helicopter[CABINE] = &cabine;
+    helicopter[HELICE_TRAS] = &helice_tras;
+    helicopter[HELICE_SUP] = &helice_sup;
+    helicopter[BASE] = &base;
 
     lightingShader.use();
     lightingShader.setVec3("lampColor", glm::vec3(1.0f, 1.0f, 1.0f));
@@ -71,7 +84,6 @@ int main()
         lastFrame = currentFrame;
 
         processInput(window);
-        processPhysics(window);
 
         glClearColor(RGBA_DARK_GREY);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -84,17 +96,12 @@ int main()
         lightingShader.setMat4("view", view);
         lightingShader.setVec3("viewPos", camera.Position);
 
-        cabine.draw(lightingShader);
+        processPhysics(window, deltaTime);
 
-        helice_tras.draw(lightingShader);
-        helice_tras.rotate(glm::radians(45.0f) * deltaTime * helicopterRotationForce, xaxis, helice_tras_pivot);
+        for (Mesh *m : helicopter)
+            m->draw(lightingShader);
 
-        helice_sup.rotate(glm::radians(45.0f) * deltaTime * helicopterRotationForce, yaxis, helice_sup_pivot);
-        helice_sup.draw(lightingShader);
-
-        base.draw(lightingShader);
         floor.draw(lightingShader);
-
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -119,7 +126,10 @@ void processInput(GLFWwindow *window)
         camera.ProcessKeyboard(RIGHT, deltaTime);
 }
 
-void processPhysics(GLFWwindow *window) {
+void processPhysics(GLFWwindow *window, float deltaTime) {
+    glm::vec3 helicopterRight = glm::cross(helicopterForward, helicopterUp);
+    float rotationAngle = 1.0f;
+
     if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
         helicopterRotationForce += 0.1f;
         if(helicopterRotationForce >= helicopterMaxRotationForce)
@@ -131,6 +141,45 @@ void processPhysics(GLFWwindow *window) {
         if(helicopterRotationForce <= 0)
             helicopterRotationForce = 0;
     }
+
+    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+        for (Mesh *m : helicopter)
+            m->rotate(glm::radians(-rotationAngle), helicopterUp, helicopter[CABINE]->pivot);
+        glm::mat4 rotM;
+        rotM = glm::rotate(rotM, glm::radians(-rotationAngle), helicopterUp);
+        helicopterForward = glm::vec3(rotM * glm::vec4(helicopterForward, 0.0f));
+        helicopterRight = glm::cross(helicopterForward, helicopterUp);
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+        for (Mesh *m : helicopter)
+            m->rotate(glm::radians(rotationAngle), helicopterUp, helicopter[CABINE]->pivot);
+        glm::mat4 rotM;
+        rotM = glm::rotate(rotM, glm::radians(rotationAngle), helicopterUp);
+        helicopterForward = glm::vec3(rotM * glm::vec4(helicopterForward, 0.0f));
+        helicopterRight = glm::cross(helicopterForward, helicopterUp);
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+        for (Mesh *m : helicopter)
+            m->rotate(glm::radians(-rotationAngle), helicopterRight, helicopter[CABINE]->pivot);
+        glm::mat4 rotM;
+        rotM = glm::rotate(rotM, glm::radians(-rotationAngle), helicopterRight);
+        helicopterForward = glm::vec3(rotM * glm::vec4(helicopterForward, 0.0f));
+        helicopterUp = glm::vec3(rotM * glm::vec4(helicopterUp, 0.0f));
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+        for (Mesh *m : helicopter)
+            m->rotate(glm::radians(rotationAngle), helicopterRight, helicopter[CABINE]->pivot);
+        glm::mat4 rotM;
+        rotM = glm::rotate(rotM, glm::radians(rotationAngle), helicopterRight);
+        helicopterForward = glm::vec3(rotM * glm::vec4(helicopterForward, 0.0f));
+        helicopterUp = glm::vec3(rotM * glm::vec4(helicopterUp, 0.0f));
+    }
+
+    helicopter[HELICE_TRAS]->rotate(glm::radians(45.0f) * deltaTime * helicopterRotationForce, helicopterRight);
+    helicopter[HELICE_SUP]->rotate(glm::radians(45.0f) * deltaTime * helicopterRotationForce, helicopterUp);
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)

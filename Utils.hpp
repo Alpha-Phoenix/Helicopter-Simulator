@@ -17,6 +17,8 @@ const glm::vec3 xaxis(1.0f, 0.0f, 0.0f);
 const glm::vec3 yaxis(0.0f, 1.0f, 0.0f);
 const glm::vec3 zaxis(0.0f, 0.0f, 1.0f);
 
+glm::vec3 rotateV3(glm::vec3 &vector, float deg, glm::vec3 &axis);
+
 template<typename T>
 void split(const std::string &s, char delim, T &result) {
     std::stringstream ss;
@@ -26,6 +28,7 @@ void split(const std::string &s, char delim, T &result) {
         result.push_back(item);
     }
 }
+
 
 GLFWwindow *initOpenGL(const int width, const int height, const char *title);
 
